@@ -221,30 +221,11 @@ No `PUT`/`PATCH`/`DELETE` routes exist for transactions (immutability is enforce
 2. **`src/services/transfer.service.js`** — the source and destination account lookups originally ran concurrently via `Promise.all` using the same MongoDB session. A single session can only have one operation in flight, causing `MongoServerError: Only servers in a sharded cluster can start a new transaction at the active transaction number`. Fixed by awaiting the two lookups sequentially.
 3. Replaced the deprecated `{ new: true }` option on `findOneAndUpdate` calls with `{ returnDocument: 'after' }` in `transaction.service.js` and `transfer.service.js`.
 
-## 9. Frontend (`client/`)
-
-A Vite + React (JS) SPA, separate from the backend, consuming the API over a dev-server proxy (`/api` → `http://localhost:5000`, no CORS changes needed). Styled with Tailwind v4 (`@tailwindcss/vite`), dark theme only, routed with `react-router-dom`.
-
-### Pages
-| Route | Purpose |
-|---|---|
-| `/` | Create account form + paginated accounts table (`GET /api/accounts`) |
-| `/accounts/:id` | Account header (balance, created_at, copy id), credit/debit transaction form, filterable/paginated transaction history (state kept in URL search params `type`/`page`/`limit`) |
-| `/transfer` | Transfer form between two accounts (From/To selects, swap, amount/description/reference_id), result card with both new balances + `transfer_id`; accepts `?from=<id>` to pre-select the source account |
-
-### Components (`client/src/components/`)
-`Button`, `Input`, `Card`, `Alert` (error/success, shows backend `code` + `message` + field `details`), `Pagination` (Prev/Next + "Page X of Y · Z records"), `Navbar`.
-
-### Data flow
-- `client/src/lib/api.js` — fetch wrapper hitting `/api/*`; on a non-OK response, throws `ApiError { status, code, message, details }` parsed from the backend's `{ success:false, error }` shape.
-- `client/src/lib/money.js` — `toPaise(rupees)` (`Math.round(Number(rupees) * 100)`) and `formatINR(paise)`. The UI always inputs/displays rupees and sends paise to the API.
-- Every page keeps backend errors in an `Alert`, shows loading/disabled states on submit, and re-fetches the relevant list after a successful mutation.
-
-## 10. Testing
+## 9. Testing
 
 `tests/api.test.js` is an automated test suite (Node built-ins only: `node:test`, `node:assert`, global `fetch`) covering accounts, transactions, history, immutability, transfers, concurrent requests, and error shape — 32 tests. Run with `npm run test:api` (requires the server already running and reachable at `BASE_URL`, default `http://localhost:5000`). Each run creates its own accounts/reference IDs so it's safely re-runnable. See [TEST_REPORT.md](./TEST_REPORT.md) for the latest results.
 
-## 11. Phase Status
+## 10. Phase Status
 
 | Phase | Scope | Status |
 |---|---|---|
@@ -256,6 +237,4 @@ A Vite + React (JS) SPA, separate from the backend, consuming the API over a dev
 | P6 | Account-to-account transfer endpoint | Done |
 | P7 | API documentation: `src/docs/openapi.js` (full OpenAPI 3.0 spec object), Swagger UI mounted at `/api-docs`, README.md | Done |
 | — | Automated API test suite (`tests/api.test.js`, `npm run test:api`) + bug fixes found during testing | Done |
-| U1 | `GET /api/accounts` list endpoint; frontend scaffold (Vite + React + Tailwind v4 + react-router), proxy, lib/api.js, lib/money.js, reusable components, placeholder pages | Done |
-| U2 | Account detail page: header, credit/debit transaction form, filterable/paginated history | Done |
-| U3 | Transfer page, "Transfer from this account" link, docs updated | Done |
+| — | `GET /api/accounts` paginated list endpoint | Done |

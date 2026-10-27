@@ -1,6 +1,6 @@
 # LEARN.md — What Every File Does
 
-A plain-English guide to every file in `src/` (backend) and `client/src/` (frontend). No jargon, no diagrams.
+A plain-English guide to every file in `src/` (backend). No jargon, no diagrams.
 
 ---
 
@@ -171,126 +171,22 @@ No functions of its own — just wiring (`POST /`, `GET /`).
 No functions of its own — just wiring (`POST /`).
 
 ### `src/docs/openapi.js`
-**What it's for:** A big description of every endpoint (requests, responses, errors) used to build the Swagger page at `/api-docs`. No functions — just data.
+**What it's for:** A write-up of every endpoint this API has — what to send it and what it replies with — used to build the interactive docs page.
+
+Swagger is just a web page that reads this write-up and turns it into a form you can fill in and click to actually call the API, right from the browser — no separate tool needed. `app.js` serves that page at `/api-docs`.
+
+- **openapiSpec** (data, not a function) — One big object listing every endpoint (`/health`, `/api/accounts`, `/api/accounts/:id/balance`, `/api/accounts/:id/transactions`, `/api/transfers`), what each one needs as input, what a success reply looks like, and which error codes it can return.
+  - Gets: nothing — it's just written out by hand.
+  - Gives back: nothing — Swagger UI reads it and draws the page.
+  - If it goes wrong: nothing to fail — if an endpoint were missing from here, it just wouldn't show up on the docs page (the real endpoint would still work).
 
 ---
 
-## Frontend (`client/src/`)
+## How to test with Swagger
 
-### `client/src/main.jsx`
-**What it's for:** The very first file that runs — puts the app on the page and wraps it with the router.
-No named functions, just a startup call. If something goes wrong: would only fail if the page's `#root` element were missing, which it isn't.
-
-### `client/src/App.jsx`
-**What it's for:** The app's overall layout — always shows the navbar, then shows one of the three pages depending on the URL.
-
-- **App()** — Picks which page to show.
-  - Gets: nothing (reads the URL). Gives back: the page layout.
-  - If it goes wrong: a URL that matches none of the three routes shows an empty main area.
-
-### `client/src/index.css`
-**What it's for:** Base styling — turns on Tailwind and sets the dark background/text colors for the whole app. No functions.
-
-### `client/src/lib/api.js`
-**What it's for:** One helper for talking to the backend, and a standard error shape for its failures.
-
-- **ApiError** (error type) — Represents a failed API call.
-  - Gets: `{status, code, message, details}`. Gives back: an error object with those fields.
-- **request(method, path, body)** (internal) — Sends one HTTP request to the backend and reads the JSON back.
-  - Gets: HTTP method, URL path, optional body.
-  - Gives back: the `data` part of a successful reply.
-  - If it goes wrong: throws an `ApiError` built from the backend's error info.
-- **api.get(path) / api.post(path, body)** — Shortcuts for GET/POST requests.
-  - Gets/Gives back: same as `request`.
-
-### `client/src/lib/money.js`
-**What it's for:** Converts between rupees (what people type/see) and paise (what the API uses).
-
-- **toPaise(rupees)** — Turns a rupee amount into whole paise.
-  - Gets: a number or numeric string. Gives back: a whole number of paise.
-  - If it goes wrong: a non-numeric input becomes `NaN` — the form is set up to stop that before it happens.
-- **formatINR(paise)** — Turns paise into a readable ₹ amount.
-  - Gets: whole number of paise. Gives back: a string like `"₹12.50"`.
-
-### `client/src/components/Button.jsx`
-**What it's for:** A reusable styled button.
-
-- **Button({children, variant, className, ...props})** — Renders a button styled as primary/secondary/ghost.
-  - Gets: the button's content, a style choice, extra classes, normal button props.
-  - Gives back: the styled button.
-
-### `client/src/components/Input.jsx`
-**What it's for:** A reusable styled input box with an optional label.
-
-- **Input({label, className, ...props})** — Renders a labeled input.
-  - Gets: optional label, extra classes, normal input props.
-  - Gives back: the labeled input.
-
-### `client/src/components/Card.jsx`
-**What it's for:** A reusable rounded box used to group content.
-
-- **Card({children, className})** — Wraps content in a styled box.
-  - Gets: content and extra classes. Gives back: the wrapped box.
-
-### `client/src/components/Alert.jsx`
-**What it's for:** A colored message box for errors or success messages.
-
-- **Alert({type, code, children})** — Shows a red (error) or green (success) box; shows nothing if there's no message.
-  - Gets: type, optional error code, the message.
-  - Gives back: the message box, or nothing if there's no message to show.
-
-### `client/src/components/Navbar.jsx`
-**What it's for:** The top bar with links to Accounts and Transfer.
-
-- **Navbar()** — Shows the title and the two nav links, highlighting the active one.
-  - Gets: nothing (reads the current URL). Gives back: the nav bar.
-
-### `client/src/components/Pagination.jsx`
-**What it's for:** Reusable Prev/Next page controls.
-
-- **Pagination({page, totalPages, totalRecords, onPageChange})** — Shows Prev/Next buttons and the current page info.
-  - Gets: current page, total pages, optional record count, a function to call with the new page.
-  - Gives back: the controls, or nothing if there's only one page.
-
-### `client/src/pages/AccountsPage.jsx`
-**What it's for:** The home page — create an account, see a paginated list of all accounts.
-
-- **loadAccounts(targetPage)** — Fetches one page of accounts.
-  - Gets: which page (defaults to current). Gives back: nothing — updates the page directly.
-  - If it goes wrong: stores the error so an Alert shows it.
-- **handleCreate(e)** — Submits the "create account" form, then reloads page 1.
-  - Gets: the form submit event. Gives back: nothing.
-  - If it goes wrong: shows the backend's error and keeps the typed name.
-- **copyId(id)** — Copies an account id to the clipboard, shows a checkmark briefly.
-  - Gets: the account id. Gives back: nothing.
-  - If it goes wrong: silently does nothing if the clipboard isn't available.
-
-### `client/src/pages/AccountDetailPage.jsx`
-**What it's for:** One account's balance, a credit/debit form, and its filterable, paginated history.
-
-- **loadAccount()** — Fetches this account's balance/details.
-  - Gets: nothing (uses the id from the URL). Gives back: nothing — updates state.
-  - If it goes wrong: if the account doesn't exist or the id is invalid, shows just the error and a back link.
-- **loadHistory(targetPage, targetType, targetLimit)** — Fetches one page of this account's history.
-  - Gets: page, type filter, page size. Gives back: nothing — updates state.
-  - If it goes wrong: stores the error so an Alert shows it.
-- **updateParams(next)** — Updates the page's URL so filters/page/limit survive a refresh.
-  - Gets: which URL values to change. Gives back: nothing.
-- **handleFilterChange / handleLimitChange / handlePageChange** — Shortcuts that call `updateParams` for the type filter, page size, or page number (filter/limit changes also jump back to page 1).
-- **copyFullId()** — Copies the full account id, shows a checkmark briefly.
-  - If it goes wrong: silently does nothing if the clipboard fails.
-- **handleSubmit(e)** — Submits the credit/debit form: sends it to the API, updates the shown balance, clears the form, reloads history.
-  - Gets: the form submit event. Gives back: nothing.
-  - If it goes wrong: shows the backend's error (code, message, and field details) and keeps the typed values.
-
-### `client/src/pages/TransferPage.jsx`
-**What it's for:** Pick two accounts and move money between them; shows the result afterward.
-
-- **loadAccounts()** — Fetches the account list for the From/To dropdowns.
-  - Gets: nothing. Gives back: nothing — updates state.
-  - If it goes wrong: stores the error so an Alert shows it.
-- **handleSwap()** — Swaps the From and To selections.
-  - Gets: nothing. Gives back: nothing.
-- **handleSubmit(e)** — Submits the transfer: sends it to the API, shows the result (new balances + transfer id), clears the form, refreshes the account list.
-  - Gets: the form submit event. Gives back: nothing.
-  - If it goes wrong: shows the backend's error (code, message, field details) and keeps the typed values. The button is also disabled upfront if From/To are empty or the same.
+1. Start the server, then open `http://localhost:5000/api-docs` in a browser.
+2. Find the endpoint you want (e.g. `POST /api/accounts`) and click it to expand it.
+3. Click **Try it out**.
+4. Edit the example request body (or fill in the fields) with your own values.
+5. Click **Execute**.
+6. Read the response: the status code (e.g. `201`, `404`) tells you if it worked, and the response body underneath shows the actual data or error returned.

@@ -6,6 +6,8 @@ Backend-only REST API for managing account balances, transactions and account-to
 
 Node.js (ESM) · Express 5 · Mongoose · Zod · cors · swagger-ui-express · swagger-jsdoc
 
+Swagger UI at `/api-docs` is the interactive UI for testing the API.
+
 ## Prerequisites
 
 - Node.js LTS
@@ -119,74 +121,36 @@ npm run test:api   # in another terminal
 
 The suite hits the running server at `BASE_URL` (default `http://localhost:5000`; override with `BASE_URL=... npm run test:api`). Each run creates its own fresh accounts and reference IDs, so it's safe to re-run repeatedly. See [TEST_REPORT.md](./TEST_REPORT.md) for the latest results.
 
-## Frontend (bonus)
-
-A Vite + React SPA in `client/` that consumes this API — not required by the assignment, included as a bonus.
-
-**Stack**: Vite · React (JS) · Tailwind v4 (`@tailwindcss/vite`) · react-router-dom.
-
-**Run:**
-
-```bash
-cd client
-npm install
-cd ..
-npm run dev      # backend, in one terminal
-npm run client   # frontend, in another terminal
-```
-
-Open `http://localhost:5173`. Vite's dev server proxies `/api/*` requests to `http://localhost:5000` in development, so `client/.env` can stay empty locally (the frontend's `lib/api.js` falls back to the relative `/api` path when `VITE_API_URL` is unset).
-
-**Pages:**
-
-| Route | Purpose |
-|---|---|
-| `/` | Create account + paginated accounts table |
-| `/accounts/:id` | Account balance/details, credit/debit form, filterable/paginated transaction history |
-| `/transfer` | Transfer funds between two accounts, with result showing both new balances |
-
-**Money handling**: all forms accept and display amounts in rupees; `client/src/lib/money.js` converts to paise (`toPaise`) before sending to the API and formats paise back to `₹` for display (`formatINR`) — the API itself only ever deals in paise.
-
 ## Deployment (free tier)
 
-The backend and frontend deploy separately; two env vars tie them together.
-
-**Backend env vars** (set wherever you host it, e.g. Render):
+Env vars to set wherever you host it (e.g. Render):
 | Var | Value |
 |---|---|
 | `MONGO_URI` | Your MongoDB Atlas connection string (Atlas Network Access must allow `0.0.0.0/0`, since the host's IP isn't fixed) |
 | `PORT` | `5000` (most hosts override this with their own `$PORT` automatically) |
-| `FRONTEND_URL` | The deployed frontend's URL, e.g. `https://your-app.vercel.app` — used for CORS |
-
-**Frontend env vars** (set wherever you host it, e.g. Vercel, with **Root Directory** = `client`):
-| Var | Value |
-|---|---|
-| `VITE_API_URL` | The deployed backend's URL + `/api`, e.g. `https://your-api.onrender.com/api` |
+| `FRONTEND_URL` | Optional — restricts CORS to a specific origin if you build a client against this API later. Defaults to allowing any origin. |
 
 Steps:
-1. Deploy `src/` (repo root, build `npm install`, start `npm start`) to a Node host — Render, Railway, or Fly.io all have free tiers. Set `MONGO_URI` and `PORT` there first; set `FRONTEND_URL` after step 2.
-2. Deploy `client/` (root directory `client`, build `npm run build`, output `dist`) to a static host — Vercel or Netlify. Set `VITE_API_URL` to the backend URL from step 1.
-3. Go back to the backend host and set `FRONTEND_URL` to the frontend URL from step 2, then redeploy the backend so CORS allows it.
-4. In MongoDB Atlas → Network Access, add `0.0.0.0/0` so the hosted backend can connect.
+1. Deploy `src/` (repo root, build `npm install`, start `npm start`) to a Node host — Render, Railway, or Fly.io all have free tiers. Set `MONGO_URI` and `PORT`.
+2. In MongoDB Atlas → Network Access, add `0.0.0.0/0` so the hosted backend can connect.
+3. Test with `curl https://your-app.onrender.com/health` and the Swagger UI at `/api-docs`.
 
 ## Folder Structure
 
 ```
 src/        Backend source (see SPEC.md for details)
 tests/      Automated API test suite (npm run test:api)
-client/     Frontend SPA (Vite + React), see "Frontend (bonus)" above
 ```
 
 ## Submission Contents
 
 - `src/` — backend source (Express, Mongoose, Zod, OpenAPI spec)
-- `client/` — frontend SPA (Vite + React, bonus)
 - `tests/` — automated API test suite
 - `README.md` — this file (setup, usage, assumptions)
-- `SPEC.md` — full internal spec (data models, request flow, service logic, frontend data flow)
+- `SPEC.md` — full internal spec (data models, request flow, service logic)
 - `TEST_REPORT.md` — latest test run results
 - `/api-docs` — interactive Swagger UI (once the backend is running)
 
 ## Further details
 
-See [SPEC.md](./SPEC.md) for the full internal spec: data models, request flow, step-by-step service logic, error code reference, and frontend data flow.
+See [SPEC.md](./SPEC.md) for the full internal spec: data models, request flow, step-by-step service logic, and error code reference.
