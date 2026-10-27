@@ -4,7 +4,7 @@ Backend-only REST API for managing account balances, transactions and account-to
 
 ## Stack
 
-Node.js (ESM) · Express 5 · Mongoose · Zod · swagger-ui-express · swagger-jsdoc
+Node.js (ESM) · Express 5 · Mongoose · Zod · cors · swagger-ui-express · swagger-jsdoc
 
 ## Prerequisites
 
@@ -135,7 +135,7 @@ npm run dev      # backend, in one terminal
 npm run client   # frontend, in another terminal
 ```
 
-Open `http://localhost:5173`. Vite's dev server proxies `/api/*` requests to `http://localhost:5000`, so no CORS changes were needed on the backend.
+Open `http://localhost:5173`. Vite's dev server proxies `/api/*` requests to `http://localhost:5000` in development, so `client/.env` can stay empty locally (the frontend's `lib/api.js` falls back to the relative `/api` path when `VITE_API_URL` is unset).
 
 **Pages:**
 
@@ -146,6 +146,28 @@ Open `http://localhost:5173`. Vite's dev server proxies `/api/*` requests to `ht
 | `/transfer` | Transfer funds between two accounts, with result showing both new balances |
 
 **Money handling**: all forms accept and display amounts in rupees; `client/src/lib/money.js` converts to paise (`toPaise`) before sending to the API and formats paise back to `₹` for display (`formatINR`) — the API itself only ever deals in paise.
+
+## Deployment (free tier)
+
+The backend and frontend deploy separately; two env vars tie them together.
+
+**Backend env vars** (set wherever you host it, e.g. Render):
+| Var | Value |
+|---|---|
+| `MONGO_URI` | Your MongoDB Atlas connection string (Atlas Network Access must allow `0.0.0.0/0`, since the host's IP isn't fixed) |
+| `PORT` | `5000` (most hosts override this with their own `$PORT` automatically) |
+| `FRONTEND_URL` | The deployed frontend's URL, e.g. `https://your-app.vercel.app` — used for CORS |
+
+**Frontend env vars** (set wherever you host it, e.g. Vercel, with **Root Directory** = `client`):
+| Var | Value |
+|---|---|
+| `VITE_API_URL` | The deployed backend's URL + `/api`, e.g. `https://your-api.onrender.com/api` |
+
+Steps:
+1. Deploy `src/` (repo root, build `npm install`, start `npm start`) to a Node host — Render, Railway, or Fly.io all have free tiers. Set `MONGO_URI` and `PORT` there first; set `FRONTEND_URL` after step 2.
+2. Deploy `client/` (root directory `client`, build `npm run build`, output `dist`) to a static host — Vercel or Netlify. Set `VITE_API_URL` to the backend URL from step 1.
+3. Go back to the backend host and set `FRONTEND_URL` to the frontend URL from step 2, then redeploy the backend so CORS allows it.
+4. In MongoDB Atlas → Network Access, add `0.0.0.0/0` so the hosted backend can connect.
 
 ## Folder Structure
 

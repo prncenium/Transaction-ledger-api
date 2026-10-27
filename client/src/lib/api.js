@@ -1,3 +1,5 @@
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
+
 export class ApiError extends Error {
   constructor({ status, code, message, details }) {
     super(message);
@@ -14,7 +16,7 @@ async function request(method, path, body) {
     opts.body = JSON.stringify(body);
   }
 
-  const res = await fetch(`/api${path}`, opts);
+  const res = await fetch(`${API_BASE}${path}`, opts);
   let json = null;
   try {
     json = await res.json();

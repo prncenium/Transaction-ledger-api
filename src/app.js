@@ -1,4 +1,5 @@
 import express from 'express';
+import cors from 'cors';
 import swaggerUi from 'swagger-ui-express';
 import { errorHandler } from './middlewares/errorHandler.js';
 import { AppError } from './utils/AppError.js';
@@ -8,6 +9,7 @@ import { openapiSpec } from './docs/openapi.js';
 
 const app = express();
 
+app.use(cors({ origin: process.env.FRONTEND_URL || '*' }));
 app.use(express.json());
 
 app.get('/health', (req, res) => {
